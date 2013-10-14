@@ -65,6 +65,7 @@ REM   GoodSync-Encrypt-Decrypt.bat PS test "test axcrypt" -m
 REM   GoodSync-Encrypt-Decrypt.bat PA test "test axcrypt"
 REM   GoodSync-Encrypt-Decrypt.bat PA "test password with blank spaces" "test axcrypt"
 REM   GoodSync-Encrypt-Decrypt.bat PA "passwordNoSpacesAndInsideQuotes" "test axcrypt"
+REM   GoodSync-Encrypt-Decrypt.bat PA "test" "C:\Users\raul cano\Documents\temp\test axcrypt" -m
 REM
 REM ***************************************************************************
 
@@ -97,7 +98,6 @@ REM Check the arguments "phase" and "recursive"
 SET arg_check=false
 IF "%1"=="PA" SET arg_check=true
 IF "%1"=="PS" SET arg_check=true
-
 IF "%arg_check%" == "false" (
 	ECHO Wrong first parameter. Use one of the following:
 	ECHO   PA: Pre Analysis, for encryption
@@ -117,7 +117,8 @@ IF "%arg_check%" == "false" (
 
 REM Path to the AxCrypt executable file. It may be necessary to write the full path or to add
 REM the corresponding directory in the system's PATH environment variable
-SET axcrypt=AxCrypt.exe
+REM SET axcrypt=AxCrypt.exe
+SET axcrypt="%ProgramFiles%/Axantum/AxCrypt/AxCrypt.exe"
 
 IF "%1" == "PA" (
 	REM To be executed in the "Pre-Analyze" step
@@ -135,12 +136,11 @@ IF "%1" == "PA" (
 	REM To be executed in the "Post-Sync" and "Post-Analysis with no changes" step
 	IF "%1" == "PS" (
 		REM Decrypt all the encrypted files in the directory and clear the cache
-		%axcrypt% -b 2 %4 -f -d %3\*.axx -t 
+		%axcrypt% -b 2 -k %2 %4 -f -d %3\*.axx -t 
 		REM Request that the resident process ends itself, and exits
 		%axcrypt% -x
 	)
 )
 
 ENDLOCAL
-
 PAUSE
