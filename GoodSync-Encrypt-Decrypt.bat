@@ -93,7 +93,6 @@ IF "%arg_check%" == "false" (
 	EXIT /b
 )
 
-
 REM Check the arguments "phase" and "recursive"
 SET arg_check=false
 IF "%1"=="PA" SET arg_check=true
@@ -116,13 +115,14 @@ IF "%arg_check%" == "false" (
 	EXIT /b
 )
 
-REM Path to the AxCrypt executable file. It may be necessary to write the full path
+REM Path to the AxCrypt executable file. It may be necessary to write the full path or to add
+REM the corresponding directory in the system's PATH environment variable
 SET axcrypt=AxCrypt.exe
 
 IF "%1" == "PA" (
 	REM To be executed in the "Pre-Analyze" step
 
-	REM Encrypt the files with the given passphrase <pass>, but do not remember this passphrase
+	REM Encrypt the files with the given passphrase, but do not remember this passphrase
 	REM This removes the original file and leaves the encrypted version only. After the syncronization
 	REM the files are decrypted back to the local system. 
 	REM See the "PS" part of this script
