@@ -1,7 +1,7 @@
 ECHO off
 REM ***************************************************************************
 REM
-REM Script Name: GoodSync-Encrypt.bat
+REM Script Name: GoodSync-Encrypt-Decrypt.bat
 REM Author: Raul Cano Argamasilla
 REM Email: raul.cano.argamasilla@gmail.com
 REM Date: 14.10.2013
@@ -45,26 +45,26 @@ REM directory and recursion parameter (-m) must equal for Pre-Analysis, Post-Ana
 REM Therefore, within the Automation section of a job, add the following commands.
 REM
 REM Pre Analysis:
-REM [Route_to_script\]GoodSync-Encrypt.bat PA "[my_passphrase]" "[my_directory]" [-m]
+REM [Route_to_script\]GoodSync-Encrypt-Decrypt.bat PA "[my_passphrase]" "[my_directory]" [-m]
 REM Post Analysis with no changes:
-REM [Route_to_script\]GoodSync-Encrypt.bat PS "[my_passphrase]" "[my_directory]" [-m]
+REM [Route_to_script\]GoodSync-Encrypt-Decrypt.bat PS "[my_passphrase]" "[my_directory]" [-m]
 REM Post Sync:
-REM [Route_to_script\]GoodSync-Encrypt.bat PS "[my_passphrase]" "[my_directory]" [-m]
+REM [Route_to_script\]GoodSync-Encrypt-Decrypt.bat PS "[my_passphrase]" "[my_directory]" [-m]
 REM 
 REM
 REM Usage in command line:
-REM GoodSync-Encrypt.bat <phase> <pass> <dir> <recursive>
+REM GoodSync-Encrypt-Decrypt.bat <phase> <pass> <dir> <recursive>
 REM   <phase> (%1) is the GoodSync phase. Either PA (PreAnalysis, for encryption) or PS (PostSync, for
 REM                decryption)
 REM   <pass> (%2) is the encryption passphrase
 REM   <dir> (%3) is the root folder where the encryption has to start. Do not add trailing slash!
 REM   <recursive> (%4) can be -m or empty. If -m , then the encryption applies to all the subdirectories
 REM Examples:
-REM   GoodSync-Encrypt.bat PA test "test axcrypt" -m
-REM   GoodSync-Encrypt.bat PS test "test axcrypt" -m 
-REM   GoodSync-Encrypt.bat PA test "test axcrypt"
-REM   GoodSync-Encrypt.bat PA "test password with blank spaces" "test axcrypt"
-REM   GoodSync-Encrypt.bat PA "passwordNoSpacesAndInsideQuotes" "test axcrypt"
+REM   GoodSync-Encrypt-Decrypt.bat PA test "test axcrypt" -m
+REM   GoodSync-Encrypt-Decrypt.bat PS test "test axcrypt" -m 
+REM   GoodSync-Encrypt-Decrypt.bat PA test "test axcrypt"
+REM   GoodSync-Encrypt-Decrypt.bat PA "test password with blank spaces" "test axcrypt"
+REM   GoodSync-Encrypt-Decrypt.bat PA "passwordNoSpacesAndInsideQuotes" "test axcrypt"
 REM
 REM ***************************************************************************
 
@@ -78,18 +78,18 @@ IF "%arg_count%"=="3" SET arg_check=true
 IF "%arg_count%"=="4" SET arg_check=true
 IF "%arg_check%" == "false" (
 	ECHO Wrong number of arguments. Use:
-	ECHO GoodSync-Encrypt.bat [phase] [pass] [dir] [recursive]
+	ECHO GoodSync-Encrypt-Decrypt.bat [phase] [pass] [dir] [recursive]
 	ECHO   [phase]: is the GoodSync phase. Either PA -PreAnalysis, for encryption- or PS -PostSync, for
 	ECHO                decryption-
 	ECHO   [pass]: is the encryption passphrase
 	ECHO   [dir]: is the root folder where the encryption has to start. Do not add trailing slash!
 	ECHO   [recursive]: can be -m or empty. If -m , then the encryption applies to all the subdirectories
 	ECHO Examples:
-	ECHO   GoodSync-Encrypt.bat PA test "test axcrypt dir" -m
-	ECHO   GoodSync-Encrypt.bat PS test "test axcrypt dir" -m 
-	ECHO   GoodSync-Encrypt.bat PA test "test axcrypt dir"
-	ECHO   GoodSync-Encrypt.bat PA "test password with blank spaces" "my/directory/here"
-	ECHO   GoodSync-Encrypt.bat PA "passwordNoSpacesAndInsideQuotes" "my/directory/here"
+	ECHO   GoodSync-Encrypt-Decrypt.bat PA test "test axcrypt dir" -m
+	ECHO   GoodSync-Encrypt-Decrypt.bat PS test "test axcrypt dir" -m 
+	ECHO   GoodSync-Encrypt-Decrypt.bat PA test "test axcrypt dir"
+	ECHO   GoodSync-Encrypt-Decrypt.bat PA "test password with blank spaces" "my/directory/here"
+	ECHO   GoodSync-Encrypt-Decrypt.bat PA "passwordNoSpacesAndInsideQuotes" "my/directory/here"
 	EXIT /b
 )
 
