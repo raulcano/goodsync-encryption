@@ -143,13 +143,4 @@ IF "%1" == "PA" (
 
 ENDLOCAL
 
-REM ---IMPORTANT!---
-REM Important to avoid the _gsdata_ directory
-
-REM The rename should do a hash of the original name, not a totally random one, otherwise
-REM even if a file is not changed, it will be considered as a new one by GoodSync and unnecessary sync'd
-
-REM Check if the PostSync changes will trigger an OnChange event
-REM ---IMPORTANT!---
-
 PAUSE
