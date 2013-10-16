@@ -160,6 +160,17 @@ if recursion != "-m" and recursion != "":
 	sys.exit()
 
 try:
+	# Get the files' attributes (time, etc.)
+	# One array with the attributes we'll store
+	# One associative array with the name of the file as index linking to the array of attributes
+	# This array must be saved applied to the encrypted version of the files
+	
+	# NOTE: don't forget to include the recursion
+	
+	# for filename in os.listdir('.'):
+		# info = os.stat(filename)
+		# print info.st_mtime
+		# ...
 	if phase == "PA":
 		# To be executed in the "Pre-Analyze" step
 
@@ -167,9 +178,9 @@ try:
 		# This removes the original file and leaves the encrypted version only. After the syncronization
 		# the files are decrypted back to the local system. 
 		# See the "PS" part of this script
+		
 		args = [AXCRYPT_EXE, '-b','2','-e','-k',passphrase,recursion,'-z',path+'\*']
 		subprocess.call(args)
-		###%axcrypt% -b 2 -e -k %2 %4 -z %3\*
 		
 		# Rename all just encrypted files to anonymous names
 		# args = [AXCRYPT_EXE, recursion,'-h',path+'\*.axx']
@@ -185,6 +196,9 @@ try:
 		# Request that the resident process ends itself, and exits
 		args = [AXCRYPT_EXE, '-x']
 		subprocess.call(args)
+	
+	# Here we apply to the newly created files the attributes we stored previously
+	# ...
 except:
 	print '==========================='
 	print 'Errors found:'
