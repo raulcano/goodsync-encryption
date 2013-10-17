@@ -159,19 +159,69 @@ if recursion != "-m" and recursion != "":
 	print '[empty]: Encryption/decryption only in the current directory'
 	sys.exit()
 
-try:
-	# Get the files' attributes (time, etc.)
+####################################################
+# Functions
+####################################################
+
+def getFilesTimes(path,recursion):
 	# One array with the attributes we'll store
 	# One associative array with the name of the file as index linking to the array of attributes
 	# This array must be saved applied to the encrypted version of the files
-	
+	# http://docs.python.org/2/library/os.html#os.stat
 	# NOTE: don't forget to include the recursion
+	files_times = {} 
 	
-	# for filename in os.listdir('.'):
-		# info = os.stat(filename)
-		# print info.st_mtime
-		# ...
+	if recursion == "-m":
+		for root, dirs, files in os.walk(path):
+			for name in files:
+				info = os.stat(os.path.join(root,name))
+				# [time of most recent content modification, time of most recent access]
+				files_times[os.path.join(root,name)] = [info.st_atime, info.st_mtime]
+				
+	else:
+		[root, dirs, files] = next(os.walk(path))
+		for name in files:
+			info = os.stat(os.path.join(root,name))
+			# [time of most recent content modification, time of most recent access]
+			files_times[os.path.join(root,name)] = [info.st_atime, info.st_mtime]
+	return files_times
+
+def setFilesTimes(path, recursion, files_times):
+	# looks in the path and matches the files from the array "times"
+	# http://www.gubatron.com/blog/2007/05/29/how-to-update-file-timestamps-in-python/
+	# modify the file timestamp
+
+	if recursion == "-m":
+		for root, dirs, files in os.walk(path):
+			for name in files:
+				t = files_times[os.path.join(root,name)], files_times[os.path.join(root,name)][1]
+				#t = files_times[os.path.join(root,name)][0]+(4*3600), files_times[os.path.join(root,name)][1]+(4*3600)
+				os.utime(os.path.join(root,name),t)
+				
+	else:
+		[root, dirs, files] = next(os.walk(path))
+		for name in files:
+			t = files_times[os.path.join(root,name)], files_times[os.path.join(root,name)][1]
+			#t = files_times[os.path.join(root,name)][0]+(4*3600), files_times[os.path.join(root,name)][1]+(4*3600)
+			os.utime(os.path.join(root,name),t)
+
+def replaceNames(files_times, recursion, phase):
+	new_files_times = {}
+	if recursion == "-m":
+		for root, dirs, files in os.walk(path):
+			for name in files:
+				new_files_times[os.path.join(root,name)] = next(files_times)
+	else:
+		[root, dirs, files] = next(os.walk(path))
+		for name in files:
+			new_files_times[os.path.join(root,name)] = next(files_times)
+	return new_files_times
+			
+try:
+	# Get the files' attributes (time, etc.)
+	files_times = getFilesTimes(path, recursion)
 	if phase == "PA":
+	
 		# To be executed in the "Pre-Analyze" step
 
 		# Encrypt the files with the given passphrase, but do not remember this passphrase
@@ -182,7 +232,7 @@ try:
 		args = [AXCRYPT_EXE, '-b','2','-e','-k',passphrase,recursion,'-z',path+'\*']
 		subprocess.call(args)
 		
-		# Rename all just encrypted files to anonymous names
+				# Rename all just encrypted files to anonymous names
 		# args = [AXCRYPT_EXE, recursion,'-h',path+'\*.axx']
 		# subprocess.call(args)
 		
@@ -197,8 +247,12 @@ try:
 		args = [AXCRYPT_EXE, '-x']
 		subprocess.call(args)
 	
+	
+	# replace the names of the files from the unencrypted version to the encrypted
+	new_files_times = replaceNames(files_times, recursion, phase)
 	# Here we apply to the newly created files the attributes we stored previously
-	# ...
+	setFilesTimes(path, recursion, new_files_times)
+
 except:
 	print '==========================='
 	print 'Errors found:'
