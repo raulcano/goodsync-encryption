@@ -101,7 +101,8 @@ import fnmatch
 # Constants definition
 ####################################################
 
-AXCRYPT_EXE = os.environ['ProgramFiles']+'\Axantum\AxCrypt\AxCrypt.exe'
+# AXCRYPT_EXE = os.environ['ProgramFiles']+'\Axantum\AxCrypt\AxCrypt.exe'
+AXCRYPT_EXE = 'C:\Program Files\Axantum\AxCrypt\AxCrypt.exe'
 AXCRYPT_EXTENSION = '.axx'
 PHASE_PA = 'PA'
 PHASE_PS = 'PS'
@@ -111,7 +112,7 @@ SEP_1 = '\\'
 SEP_2 = '/'
 # The ones needed by GoodSync to work, we don't encrypt them in any case
 # In principle it's only _gsdata_ since _saved_ and _history_ are included there
-DIRECTORIES_TO_SKIP = "_gsdata_"
+# DIRECTORIES_TO_SKIP = "_gsdata_"
 
 
 ####################################################
@@ -170,7 +171,8 @@ if recursion != RECURSION_YES and recursion != "":
 
 # Check the arguments for including / excluding files and folders
 includes = [] # for files only
-excludes = ['test\_gsdata_'] # for dirs and files
+# excludes = [] # for dirs and files
+excludes = ['d:\Test\TestL\_gsdata_','d:\Test\TestL2\_gsdata_'] # for dirs and files
 # if the phase is to unencrypt, it only makes sense with the correct extension
 if phase == PHASE_PS:
 	includes = ['*'+AXCRYPT_EXTENSION]
@@ -214,20 +216,20 @@ def getFilesTimes(path,recursion, includes, excludes):
 	includes = r'|'.join([fnmatch.translate(x) for x in includes])
 	excludes = r'|'.join([fnmatch.translate(x) for x in excludes]) or r'$.'
 	for root, dirs, files in os.walk(path):
-		# print 'Root:                   '+root
-		# print 'Dirs before exclusion:  '+str(dirs)
+		print 'Root:                   '+root
+		print 'Dirs before exclusion:  '+str(dirs)
 		# exclude dirs
 		dirs[:] = [os.path.join(root, d) for d in dirs]
 		dirs[:] = [d.replace(root+SEP_1,'',1) for d in dirs if not re.match(excludes, d)]
 
-		# print 'Dirs after exclusion:   '+str(dirs)
+		print 'Dirs after exclusion:   '+str(dirs)
 
 		# exclude/include files
-		# print 'Files before exclusion: '+str(files)
+		print 'Files before exclusion: '+str(files)
 		files = [os.path.join(root, f) for f in files]
 		files = [f for f in files if not re.match(excludes, f)]
 		files = [f for f in files if re.match(includes, f)]
-		# print 'Files before exclusion: '+str(files)
+		print 'Files after exclusion: '+str(files)
 		
 		for fname in files:
 			info = os.stat(fname)
@@ -301,6 +303,9 @@ try:
 			args = [AXCRYPT_EXE, '-b','2','-e','-k',passphrase,recursion,'-z',file]
 			subprocess.call(args)
 		
+		# Request that the resident process ends itself, and exits
+		args = [AXCRYPT_EXE, '-x']
+		subprocess.call(args)
 		# Rename all just encrypted files to anonymous names
 		# args = [AXCRYPT_EXE, recursion,'-h',path+'\*.axx']
 		# subprocess.call(args)
