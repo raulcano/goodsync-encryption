@@ -169,8 +169,11 @@ if recursion != RECURSION_YES and recursion != "":
 	sys.exit()
 
 # Check the arguments for including / excluding files and folders
-includes = ['*'] # for files only
+includes = [] # for files only
 excludes = ['test\_gsdata_'] # for dirs and files
+# if the phase is to unencrypt, it only makes sense with the correct extension
+if phase == PHASE_PS:
+	includes = ['*'+AXCRYPT_EXTENSION]
 ####################################################
 # Functions
 ####################################################
