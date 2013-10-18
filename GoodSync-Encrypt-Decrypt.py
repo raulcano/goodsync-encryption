@@ -219,20 +219,20 @@ def getFilesTimes(path,recursion, includes, excludes):
 	includes = r'|'.join([fnmatch.translate(x) for x in includes])
 	excludes = r'|'.join([fnmatch.translate(x) for x in excludes]) or r'$.'
 	for root, dirs, files in os.walk(path):
-		print 'Root:                   '+root
-		print 'Dirs before exclusion:  '+str(dirs)
+		# print 'Root:                   '+root
+		# print 'Dirs before exclusion:  '+str(dirs)
 		# exclude dirs
 		dirs[:] = [os.path.join(root, d) for d in dirs]
 		dirs[:] = [d.replace(root+SEP_1,'',1) for d in dirs if not re.match(excludes, d)]
 
-		print 'Dirs after exclusion:   '+str(dirs)
+		# print 'Dirs after exclusion:   '+str(dirs)
 
 		# exclude/include files
-		print 'Files before exclusion: '+str(files)
+		# print 'Files before exclusion: '+str(files)
 		files = [os.path.join(root, f) for f in files]
 		files = [f for f in files if not re.match(excludes, f)]
 		files = [f for f in files if re.match(includes, f)]
-		print 'Files after exclusion: '+str(files)
+		# print 'Files after exclusion: '+str(files)
 		
 		for fname in files:
 			info = os.stat(fname)
@@ -295,8 +295,8 @@ try:
 	files_times = getFilesTimes(path, recursion, includes, excludes)
 	
 	# Deactivate the On File Change option 
-	# goodsync.exe job _Test /on-file-change=no
-	# args = [GOODSYNC_EXE, 'job', JOBNAME, '/on-file-change=no']
+	# goodsync.exe job-update _Test /on-file-change=no
+	# args = [GOODSYNC_EXE, 'job-update', JOBNAME, '/on-file-change=no']
 	# subprocess.call(args)
 	# time.sleep(5)
 	if phase == PHASE_PA:
@@ -332,9 +332,9 @@ try:
 	subprocess.call(args)
 	
 	# Activate the On File Change option 
-	# goodsync.exe job _Test /on-file-change=sync
+	# goodsync.exe job-update _Test /on-file-change=sync
 	# time.sleep(5)
-	# args = [GOODSYNC_EXE, 'job', JOBNAME, '/on-file-change=analyze']
+	# args = [GOODSYNC_EXE, 'job-update', JOBNAME, '/on-file-change=analyze']
 	# subprocess.call(args)
 	
 	# replace the names of the files from the unencrypted version to the encrypted
