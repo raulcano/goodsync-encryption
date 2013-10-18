@@ -303,9 +303,6 @@ try:
 			args = [AXCRYPT_EXE, '-b','2','-e','-k',passphrase,recursion,'-z',file]
 			subprocess.call(args)
 		
-		# Request that the resident process ends itself, and exits
-		args = [AXCRYPT_EXE, '-x']
-		subprocess.call(args)
 		# Rename all just encrypted files to anonymous names
 		# args = [AXCRYPT_EXE, recursion,'-h',path+'\*.axx']
 		# subprocess.call(args)
@@ -318,9 +315,9 @@ try:
 			args = [AXCRYPT_EXE, '-b','2','-k',passphrase,recursion,'-f','-d',file,'-t']
 			subprocess.call(args)
 		
-		# Request that the resident process ends itself, and exits
-		args = [AXCRYPT_EXE, '-x']
-		subprocess.call(args)
+	# Request that the resident process ends itself, and exits
+	args = [AXCRYPT_EXE, '-x']
+	subprocess.call(args)
 	
 	# replace the names of the files from the unencrypted version to the encrypted
 	new_files_times = rename(files_times, phase)
