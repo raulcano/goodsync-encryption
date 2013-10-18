@@ -297,9 +297,6 @@ try:
 		# the files are decrypted back to the local system. 
 		# See the PHASE_PS part of this script
 		
-		# args = [AXCRYPT_EXE, '-b','2','-e','-k',passphrase,recursion,'-z',path+'\*']
-		# subprocess.call(args)
-		
 		for file, times in files_times.items():
 			args = [AXCRYPT_EXE, '-b','2','-e','-k',passphrase,recursion,'-z',file]
 			subprocess.call(args)
@@ -311,9 +308,7 @@ try:
 	elif phase == PHASE_PS:
 		# To be executed in the "Post-Sync" and "Post-Analysis with no changes" step
 		# Decrypt all the encrypted files in the directory and clear the cache
-		# args = [AXCRYPT_EXE, '-b','2','-k',passphrase,recursion,'-f','-d',path+'\*.axx','-t']
-		# subprocess.call(args)
-		
+	
 		for file, times in files_times.items():
 			args = [AXCRYPT_EXE, '-b','2','-k',passphrase,recursion,'-f','-d',file,'-t']
 			subprocess.call(args)
