@@ -94,6 +94,8 @@ import sys
 import os
 import subprocess
 import re
+from datetime import datetime, tzinfo, timedelta
+
 
 ####################################################
 # Constants definition
@@ -167,12 +169,29 @@ if recursion != RECURSION_YES and recursion != "":
 # Functions
 ####################################################
 
+class UTC(tzinfo):
+    def utcoffset(self, dt):
+         return timedelta(0)
+    def tzname(self, dt):
+        return "UTC"
+    def dst(self, dt):
+        return timedelta(0)
+		
+def printNice(files_times):
+	for name, times in files_times.items():
+		t1 = datetime.fromtimestamp(float(times[0]), UTC())
+		t2 = datetime.fromtimestamp(float(times[1]), UTC())
+		print 'File                  : ' + name
+		print 'Last access time      : ' + str(t1)
+		print 'Last modification time: ' + str(t2)
+		print '=='
+
+
 def getFilesTimes(path,recursion):
 	# One array with the attributes we'll store
 	# One associative array with the name of the file as index linking to the array of attributes
 	# This array must be saved applied to the encrypted version of the files
 	# http://docs.python.org/2/library/os.html#os.stat
-	# NOTE: don't forget to include the recursion
 	files_times = {} 
 	
 	if recursion == RECURSION_YES:
@@ -193,6 +212,25 @@ def getFilesTimes(path,recursion):
 def setFilesTimes(path, recursion, new_files_times):
 	# looks in the path and matches the files from the array 
 	# http://www.gubatron.com/blog/2007/05/29/how-to-update-file-timestamps-in-python/	
+	
+	# files_times = {} 
+	# if recursion == RECURSION_YES:
+		# for root, dirs, files in os.walk(path):
+			# for name in files:
+				# info = os.stat(os.path.join(root,name))
+				# # [time of most recent content modification, time of most recent access]
+				# files_times[os.path.join(root,name)] = [info.st_atime, info.st_mtime]
+				
+	# else:
+		# [root, dirs, files] = next(os.walk(path))
+		# for name in files:
+			# info = os.stat(os.path.join(root,name))
+			# # [time of most recent content modification, time of most recent access]
+			# files_times[os.path.join(root,name)] = [info.st_atime, info.st_mtime]
+	
+	# printNice(files_times)
+	# printNice(new_files_times)
+	
 	for file, times in new_files_times.items():
 		t = times[0], times[1]
 		os.utime(os.path.join(file),t)
@@ -230,8 +268,7 @@ def rename(files_times, phase):
 		# Reconstruct the path with the new filename and the path (as from "parts")
 		new_path = parts[2][::-1] + parts[1] + name2[::-1]
 		new_files_times[new_path] = times
-	
-	#print new_files_times
+
 	return new_files_times
 			
 try:
@@ -262,7 +299,6 @@ try:
 		# Request that the resident process ends itself, and exits
 		args = [AXCRYPT_EXE, '-x']
 		subprocess.call(args)
-	
 	
 	# replace the names of the files from the unencrypted version to the encrypted
 	new_files_times = rename(files_times, phase)
