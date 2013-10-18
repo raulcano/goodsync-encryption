@@ -95,7 +95,7 @@ import os
 import subprocess
 import re
 from datetime import datetime, tzinfo, timedelta
-
+import fnmatch
 
 ####################################################
 # Constants definition
@@ -109,6 +109,9 @@ RECURSION_YES = '-m'
 RECURSION_NO = ''
 SEP_1 = '\\'
 SEP_2 = '/'
+# The ones needed by GoodSync to work, we don't encrypt them in any case
+# In principle it's only _gsdata_ since _saved_ and _history_ are included there
+DIRECTORIES_TO_SKIP = "_gsdata_"
 
 
 ####################################################
@@ -165,6 +168,9 @@ if recursion != RECURSION_YES and recursion != "":
 	print '[empty]: Encryption/decryption only in the current directory'
 	sys.exit()
 
+# Check the arguments for including / excluding files and folders
+includes = ['*'] # for files only
+excludes = ['test\_gsdata_'] # for dirs and files
 ####################################################
 # Functions
 ####################################################
@@ -187,50 +193,55 @@ def printNice(files_times):
 		print '=='
 
 
-def getFilesTimes(path,recursion):
+def getFilesTimes(path,recursion, includes, excludes):
 	# One array with the attributes we'll store
 	# One associative array with the name of the file as index linking to the array of attributes
 	# This array must be saved applied to the encrypted version of the files
 	# http://docs.python.org/2/library/os.html#os.stat
 	files_times = {} 
-	
-	if recursion == RECURSION_YES:
-		for root, dirs, files in os.walk(path):
-			for name in files:
-				info = os.stat(os.path.join(root,name))
-				# [time of most recent content modification, time of most recent access]
-				files_times[os.path.join(root,name)] = [info.st_atime, info.st_mtime]
-				
-	else:
-		[root, dirs, files] = next(os.walk(path))
-		for name in files:
-			info = os.stat(os.path.join(root,name))
-			# [time of most recent content modification, time of most recent access]
-			files_times[os.path.join(root,name)] = [info.st_atime, info.st_mtime]
-	return files_times
 
-def setFilesTimes(path, recursion, new_files_times):
-	# looks in the path and matches the files from the array 
-	# http://www.gubatron.com/blog/2007/05/29/how-to-update-file-timestamps-in-python/	
-	
-	# files_times = {} 
-	# if recursion == RECURSION_YES:
-		# for root, dirs, files in os.walk(path):
-			# for name in files:
-				# info = os.stat(os.path.join(root,name))
-				# # [time of most recent content modification, time of most recent access]
-				# files_times[os.path.join(root,name)] = [info.st_atime, info.st_mtime]
-				
-	# else:
-		# [root, dirs, files] = next(os.walk(path))
+	# for root, dirs, files in os.walk(path):
 		# for name in files:
 			# info = os.stat(os.path.join(root,name))
 			# # [time of most recent content modification, time of most recent access]
 			# files_times[os.path.join(root,name)] = [info.st_atime, info.st_mtime]
+		# if recursion != RECURSION_YES: dirs[:] = []	
 	
-	# printNice(files_times)
-	# printNice(new_files_times)
+	# transform glob patterns to regular expressions
+	includes = r'|'.join([fnmatch.translate(x) for x in includes])
+	excludes = r'|'.join([fnmatch.translate(x) for x in excludes]) or r'$.'
+	for root, dirs, files in os.walk(path):
+		# print 'Root:                   '+root
+		# print 'Dirs before exclusion:  '+str(dirs)
+		# exclude dirs
+		dirs[:] = [os.path.join(root, d) for d in dirs]
+		dirs[:] = [d.replace(root+SEP_1,'',1) for d in dirs if not re.match(excludes, d)]
+
+		# print 'Dirs after exclusion:   '+str(dirs)
+
+		# exclude/include files
+		# print 'Files before exclusion: '+str(files)
+		files = [os.path.join(root, f) for f in files]
+		files = [f for f in files if not re.match(excludes, f)]
+		files = [f for f in files if re.match(includes, f)]
+		# print 'Files before exclusion: '+str(files)
+		
+		for fname in files:
+			info = os.stat(fname)
+			# [time of most recent content modification, time of most recent access]
+			files_times[fname] = [info.st_atime, info.st_mtime]
+		
+		if recursion != RECURSION_YES: 
+			dirs[:] = []	
+		
+	return files_times
 	
+	
+
+def setFilesTimes(path, recursion, new_files_times):
+	# looks in the path and matches the files from the array 
+	# http://www.gubatron.com/blog/2007/05/29/how-to-update-file-timestamps-in-python/	
+
 	for file, times in new_files_times.items():
 		t = times[0], times[1]
 		os.utime(os.path.join(file),t)
@@ -273,7 +284,7 @@ def rename(files_times, phase):
 			
 try:
 	# Get the files' attributes (time, etc.)
-	files_times = getFilesTimes(path, recursion)
+	files_times = getFilesTimes(path, recursion, includes, excludes)
 	if phase == PHASE_PA:
 	
 		# To be executed in the "Pre-Analyze" step
@@ -283,8 +294,12 @@ try:
 		# the files are decrypted back to the local system. 
 		# See the PHASE_PS part of this script
 		
-		args = [AXCRYPT_EXE, '-b','2','-e','-k',passphrase,recursion,'-z',path+'\*']
-		subprocess.call(args)
+		# args = [AXCRYPT_EXE, '-b','2','-e','-k',passphrase,recursion,'-z',path+'\*']
+		# subprocess.call(args)
+		
+		for file, times in files_times.items():
+			args = [AXCRYPT_EXE, '-b','2','-e','-k',passphrase,recursion,'-z',file]
+			subprocess.call(args)
 		
 		# Rename all just encrypted files to anonymous names
 		# args = [AXCRYPT_EXE, recursion,'-h',path+'\*.axx']
@@ -293,8 +308,12 @@ try:
 	elif phase == PHASE_PS:
 		# To be executed in the "Post-Sync" and "Post-Analysis with no changes" step
 		# Decrypt all the encrypted files in the directory and clear the cache
-		args = [AXCRYPT_EXE, '-b','2','-k',passphrase,recursion,'-f','-d',path+'\*.axx','-t']
-		subprocess.call(args)
+		# args = [AXCRYPT_EXE, '-b','2','-k',passphrase,recursion,'-f','-d',path+'\*.axx','-t']
+		# subprocess.call(args)
+		
+		for file, times in files_times.items():
+			args = [AXCRYPT_EXE, '-b','2','-k',passphrase,recursion,'-f','-d',file,'-t']
+			subprocess.call(args)
 		
 		# Request that the resident process ends itself, and exits
 		args = [AXCRYPT_EXE, '-x']
