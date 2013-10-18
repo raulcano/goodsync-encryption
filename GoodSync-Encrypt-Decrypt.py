@@ -93,17 +93,21 @@
 import sys
 import os
 import subprocess
-
-# import csv
-# from datetime import datetime
-# import re
-# import codecs
+import re
 
 ####################################################
 # Constants definition
 ####################################################
 
 AXCRYPT_EXE = os.environ['ProgramFiles']+'\Axantum\AxCrypt\AxCrypt.exe'
+AXCRYPT_EXTENSION = '.axx'
+PHASE_PA = 'PA'
+PHASE_PS = 'PS'
+RECURSION_YES = '-m'
+RECURSION_NO = ''
+SEP_1 = '\\'
+SEP_2 = '/'
+
 
 ####################################################
 # Arguments processing
@@ -123,17 +127,17 @@ else:
 	print "Wrong number of arguments: ", len(sys.argv)
 	print "Usage:"
 	print " {0} [phase] [pass] [dir] [recursive]".format(sys.argv[0])
-	print "   [phase]: is the GoodSync phase. Either PA -PreAnalysis, for encryption- or PS -PostSync, for"
+	print "   [phase]: is the GoodSync phase. Either " + PHASE_PA + " -PreAnalysis, for encryption- or " + PHASE_PA + " -PostSync, for"
 	print "                decryption-"
 	print "   [pass]: is the encryption passphrase"
 	print "   [dir]: is the root folder where the encryption has to start. Do not add trailing slash!"
 	print "   [recursive]: can be -m or empty. If -m , then the encryption applies to all the subdirectories"
 	print " Examples:"
-	print "   GoodSync-Encrypt-Decrypt.bat PA test \"test axcrypt dir\" -m"
-	print "   GoodSync-Encrypt-Decrypt.bat PS test \"test axcrypt dir\" -m "
-	print "   GoodSync-Encrypt-Decrypt.bat PA test \"test axcrypt dir\""
-	print "   GoodSync-Encrypt-Decrypt.bat PA \"test password with blank spaces\" \"my/directory/here\""
-	print "   GoodSync-Encrypt-Decrypt.bat PA \"passwordNoSpacesAndInsideQuotes\" \"my/directory/here\""
+	print "   GoodSync-Encrypt-Decrypt.bat " + PHASE_PA + " test \"test axcrypt dir\" -m"
+	print "   GoodSync-Encrypt-Decrypt.bat " + PHASE_PA + " test \"test axcrypt dir\" -m "
+	print "   GoodSync-Encrypt-Decrypt.bat " + PHASE_PA + " test \"test axcrypt dir\""
+	print "   GoodSync-Encrypt-Decrypt.bat " + PHASE_PA + " \"test password with blank spaces\" \"my/directory/here\""
+	print "   GoodSync-Encrypt-Decrypt.bat " + PHASE_PA + " \"passwordNoSpacesAndInsideQuotes\" \"my/directory/here\""
 	sys.exit()
 
 print '==========================='
@@ -147,13 +151,13 @@ print ''
 
 
 # Check the arguments "phase" and "recursive"
-if phase != "PA" and phase != "PS":
+if phase != PHASE_PA and phase != PHASE_PS:
 	print 'Wrong fist parameter. Use one of the following:'
-	print 'PA: Pre Analysis, for encryption'
-	print 'PS: Post Sync, for decryption'
+	print PHASE_PA + ': Pre Analysis, for encryption'
+	print PHASE_PS + ': Post Sync, for decryption'
 	sys.exit()
 
-if recursion != "-m" and recursion != "":
+if recursion != RECURSION_YES and recursion != "":
 	print 'Wrong recursion parameter. Use one of the following:'
 	print '-m: Recursive encription/decryption within the directory'
 	print '[empty]: Encryption/decryption only in the current directory'
@@ -171,7 +175,7 @@ def getFilesTimes(path,recursion):
 	# NOTE: don't forget to include the recursion
 	files_times = {} 
 	
-	if recursion == "-m":
+	if recursion == RECURSION_YES:
 		for root, dirs, files in os.walk(path):
 			for name in files:
 				info = os.stat(os.path.join(root,name))
@@ -186,58 +190,70 @@ def getFilesTimes(path,recursion):
 			files_times[os.path.join(root,name)] = [info.st_atime, info.st_mtime]
 	return files_times
 
-def setFilesTimes(path, recursion, files_times):
-	# looks in the path and matches the files from the array "times"
-	# http://www.gubatron.com/blog/2007/05/29/how-to-update-file-timestamps-in-python/
-	# modify the file timestamp
-
-	if recursion == "-m":
-		for root, dirs, files in os.walk(path):
-			for name in files:
-				t = files_times[os.path.join(root,name)], files_times[os.path.join(root,name)][1]
-				#t = files_times[os.path.join(root,name)][0]+(4*3600), files_times[os.path.join(root,name)][1]+(4*3600)
-				os.utime(os.path.join(root,name),t)
-				
-	else:
-		[root, dirs, files] = next(os.walk(path))
-		for name in files:
-			t = files_times[os.path.join(root,name)], files_times[os.path.join(root,name)][1]
-			#t = files_times[os.path.join(root,name)][0]+(4*3600), files_times[os.path.join(root,name)][1]+(4*3600)
-			os.utime(os.path.join(root,name),t)
-
-def replaceNames(files_times, recursion, phase):
+def setFilesTimes(path, recursion, new_files_times):
+	# looks in the path and matches the files from the array 
+	# http://www.gubatron.com/blog/2007/05/29/how-to-update-file-timestamps-in-python/	
+	for file, times in new_files_times.items():
+		t = times[0], times[1]
+		os.utime(os.path.join(file),t)
+	
+# If PHASE_PA change names from their originals to the encrypted format (e.g. file.txt --> file-txt.axx)
+# If PHASE_PS change names from their encrypted format to their original(e.g. file-txt.axx --> file.txt)
+def rename(files_times, phase):
+	
 	new_files_times = {}
-	if recursion == "-m":
-		for root, dirs, files in os.walk(path):
-			for name in files:
-				new_files_times[os.path.join(root,name)] = next(files_times)
-	else:
-		[root, dirs, files] = next(os.walk(path))
-		for name in files:
-			new_files_times[os.path.join(root,name)] = next(files_times)
+	# print files_times
+	for name,times in files_times.items():
+		parts = name[::-1].partition(SEP_1)
+		# if no partition produced, may be because the separator is other type (/ instead of \)
+		if parts[1] == '' and parts[2] == '':
+			parts = name[::-1].partition(SEP_2)
+		name2 = parts[0]
+		# here, name has the reversed name of the file
+		
+		if phase == PHASE_PA:
+			# since the string is reversed
+			# 1.- substitute the first dot for a dash
+			name2 = name2.replace('.','-',1)
+			# 2.- prepend the reversed AXCRYPT_EXTENSION
+			name2 = AXCRYPT_EXTENSION[::-1] + name2
+			
+		elif phase == PHASE_PS:
+			# since the string is reversed
+			# 1.- remove the first occurence of (reversed AXCRYPT_EXTENSION)
+			name2 = name2.replace(AXCRYPT_EXTENSION[::-1],'',1)
+			# 2.- replace the first occurence of '-' for '.'
+			# This has a problem though, if the original file had no extension and a dash on its name
+			# the new name will include a dot instead of a dash as originally expected
+			name2 = name2.replace('-','.',1)
+			
+		# Reconstruct the path with the new filename and the path (as from "parts")
+		new_path = parts[2][::-1] + parts[1] + name2[::-1]
+		new_files_times[new_path] = times
+	
+	#print new_files_times
 	return new_files_times
 			
 try:
 	# Get the files' attributes (time, etc.)
 	files_times = getFilesTimes(path, recursion)
-	if phase == "PA":
+	if phase == PHASE_PA:
 	
 		# To be executed in the "Pre-Analyze" step
 
 		# Encrypt the files with the given passphrase, but do not remember this passphrase
 		# This removes the original file and leaves the encrypted version only. After the syncronization
 		# the files are decrypted back to the local system. 
-		# See the "PS" part of this script
+		# See the PHASE_PS part of this script
 		
 		args = [AXCRYPT_EXE, '-b','2','-e','-k',passphrase,recursion,'-z',path+'\*']
 		subprocess.call(args)
 		
-				# Rename all just encrypted files to anonymous names
+		# Rename all just encrypted files to anonymous names
 		# args = [AXCRYPT_EXE, recursion,'-h',path+'\*.axx']
 		# subprocess.call(args)
 		
-	elif phase == "PS":
-		print ''
+	elif phase == PHASE_PS:
 		# To be executed in the "Post-Sync" and "Post-Analysis with no changes" step
 		# Decrypt all the encrypted files in the directory and clear the cache
 		args = [AXCRYPT_EXE, '-b','2','-k',passphrase,recursion,'-f','-d',path+'\*.axx','-t']
@@ -249,7 +265,7 @@ try:
 	
 	
 	# replace the names of the files from the unencrypted version to the encrypted
-	new_files_times = replaceNames(files_times, recursion, phase)
+	new_files_times = rename(files_times, phase)
 	# Here we apply to the newly created files the attributes we stored previously
 	setFilesTimes(path, recursion, new_files_times)
 
