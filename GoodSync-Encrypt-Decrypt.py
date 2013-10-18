@@ -96,6 +96,7 @@ import subprocess
 import re
 from datetime import datetime, tzinfo, timedelta
 import fnmatch
+import time
 
 ####################################################
 # Constants definition
@@ -103,6 +104,8 @@ import fnmatch
 
 # AXCRYPT_EXE = os.environ['ProgramFiles']+'\Axantum\AxCrypt\AxCrypt.exe'
 AXCRYPT_EXE = 'C:\Program Files\Axantum\AxCrypt\AxCrypt.exe'
+GOODSYNC_EXE = 'C:\Program Files\Siber Systems\GoodSync\GoodSync.exe'
+JOBNAME = '_Test'
 AXCRYPT_EXTENSION = '.axx'
 PHASE_PA = 'PA'
 PHASE_PS = 'PS'
@@ -290,10 +293,19 @@ def rename(files_times, phase):
 try:
 	# Get the files' attributes (time, etc.)
 	files_times = getFilesTimes(path, recursion, includes, excludes)
+	
+	# Deactivate the On File Change option 
+	# goodsync.exe job _Test /on-file-change=no
+	# args = [GOODSYNC_EXE, 'job', JOBNAME, '/on-file-change=no']
+	# subprocess.call(args)
+	# time.sleep(5)
 	if phase == PHASE_PA:
 	
 		# To be executed in the "Pre-Analyze" step
 
+		
+		
+		
 		# Encrypt the files with the given passphrase, but do not remember this passphrase
 		# This removes the original file and leaves the encrypted version only. After the syncronization
 		# the files are decrypted back to the local system. 
@@ -318,6 +330,12 @@ try:
 	# Request that the resident process ends itself, and exits
 	args = [AXCRYPT_EXE, '-x']
 	subprocess.call(args)
+	
+	# Activate the On File Change option 
+	# goodsync.exe job _Test /on-file-change=sync
+	# time.sleep(5)
+	# args = [GOODSYNC_EXE, 'job', JOBNAME, '/on-file-change=analyze']
+	# subprocess.call(args)
 	
 	# replace the names of the files from the unencrypted version to the encrypted
 	new_files_times = rename(files_times, phase)
